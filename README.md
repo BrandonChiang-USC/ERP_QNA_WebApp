@@ -29,40 +29,63 @@
 
 ## 安裝與執行
 
-### 1. 複製專案
+### 1. 安裝 PostgreSQL (Windows 11)
+
+1. 前往 [PostgreSQL 官網](https://www.postgresql.org/download/windows/) 下載安裝程式
+2. 執行安裝程式，記住設定的密碼（預設使用者為 `postgres`）
+3. 安裝完成後，PostgreSQL 服務會自動啟動
+
+### 2. 複製專案
 
 ```bash
-git clone https://github.com/your-username/ERP_QNA_WebApp.git
+git clone https://github.com/BrandonChiang-USC/ERP_QNA_WebApp.git
 cd ERP_QNA_WebApp
 ```
 
-### 2. 設定資料庫
+### 3. 建立資料庫
 
-確保 PostgreSQL 已安裝並執行，然後建立資料庫：
+開啟 pgAdmin 或使用 psql 命令列工具：
 
 ```sql
 CREATE DATABASE erp_qna;
 ```
 
-### 3. 設定連線字串
+### 4. 建立資料表
+
+連線到 `erp_qna` 資料庫後，執行以下 SQL：
+
+```sql
+CREATE TABLE qna (
+    "Id" SERIAL PRIMARY KEY,
+    "Question" VARCHAR(2000) NOT NULL,
+    "Answer" TEXT NOT NULL,
+    "Tags" VARCHAR(500),
+    "Remark" VARCHAR(1000),
+    "CreatedAt" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt" TIMESTAMP
+);
+```
+
+或者使用 EF Core 遷移自動建立：
+
+```bash
+dotnet tool install --global dotnet-ef
+dotnet ef database update
+```
+
+### 5. 設定連線字串
 
 編輯 `appsettings.json`，修改資料庫連線設定：
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=erp_qna;Username=your_username;Password=your_password"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=erp_qna;Username=postgres;Password=你的密碼"
   }
 }
 ```
 
-### 4. 執行資料庫遷移
-
-```bash
-dotnet ef database update
-```
-
-### 5. 啟動應用程式
+### 6. 啟動應用程式
 
 ```bash
 dotnet run
