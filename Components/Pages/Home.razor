@@ -1,0 +1,379 @@
+@page "/"
+@rendermode InteractiveServer
+@inject QnAService QnAService
+@inject IToastService ToastService
+@inject IDialogService DialogService
+
+<PageTitle>ERP Q&A System</PageTitle>
+
+<FluentGrid Spacing="3">
+    @* Input Section *@
+    <FluentGridItem xs="12" md="6">
+        <FluentCard>
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                <h4>@(isEditing ? "Edit Q&A" : "New Q&A")</h4>
+
+                <FluentTextField @bind-Value="currentQnA.Question"
+                                 Label="Question"
+                                 Placeholder="Enter question..."
+                                 Style="width: 100%;" />
+
+                <FluentTextArea @bind-Value="currentQnA.Answer"
+                                Label="Answer"
+                                Placeholder="Enter answer..."
+                                Rows="4"
+                                Style="width: 100%;" />
+
+                <FluentTextField @bind-Value="currentQnA.Tags"
+                                 Label="Tags"
+                                 Placeholder="e.g., ERP, Finance, HR"
+                                 Style="width: 100%;" />
+
+                <FluentTextField @bind-Value="currentQnA.Remark"
+                                 Label="Remark"
+                                 Placeholder="Additional notes..."
+                                 Style="width: 100%;" />
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="width: 100%;">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                        <FluentButton Appearance="Appearance.Accent" OnClick="SaveQnA" Disabled="@isSaving">
+                            @(isEditing ? "Update" : "Add")
+                        </FluentButton>
+                        @if (isEditing)
+                        {
+                            <FluentButton Appearance="Appearance.Outline" OnClick="CancelEdit">
+                                Cancel
+                            </FluentButton>
+                        }
+                    </FluentStack>
+                    <FluentButton Appearance="Appearance.Outline" OnClick="OpenImportDialog" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())">
+                        Import Excel
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>
+
+    @* Query Section *@
+    <FluentGridItem xs="12" md="6">
+        <FluentCard>
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                <h4>Search Q&A</h4>
+
+                <FluentTextField @bind-Value="searchKeyword"
+                                 Label="Keyword"
+                                 Placeholder="Search in question, answer, remark..."
+                                 Style="width: 100%;" />
+
+                <FluentTextField @bind-Value="searchTags"
+                                 Label="Tags"
+                                 Placeholder="Filter by tags..."
+                                 Style="width: 100%;" />
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                    <FluentButton Appearance="Appearance.Accent" OnClick="SearchQnA" Disabled="@isSearching">
+                        Search
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Outline" OnClick="ClearSearch">
+                        Clear
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Outline" OnClick="LoadAll">
+                        Show All
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>
+
+    @* Results Section *@
+    <FluentGridItem xs="12">
+        <FluentCard>
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                <h4>Results (@qnaList.Count items)</h4>
+
+                @if (isLoading)
+                {
+                    <FluentProgressRing />
+                }
+                else if (qnaList.Count == 0)
+                {
+                    <FluentMessageBar Intent="@MessageIntent.Info">
+                        No Q&A records found. Add new entries or import from Excel.
+                    </FluentMessageBar>
+                }
+                else
+                {
+                    <div style="overflow-x: auto;">
+                        <FluentDataGrid Items="@qnaList.AsQueryable()" ResizableColumns="true" Style="width: 100%;">
+                            <PropertyColumn Property="@(q => q.Id)" Title="ID" Width="60px" />
+                            <PropertyColumn Property="@(q => q.Question)" Title="Question" />
+                            <PropertyColumn Property="@(q => q.Answer)" Title="Answer" />
+                            <PropertyColumn Property="@(q => q.Tags)" Title="Tags" Width="120px" />
+                            <PropertyColumn Property="@(q => q.Remark)" Title="Remark" Width="120px" />
+                            <TemplateColumn Title="Actions" Width="120px">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
+                                    <FluentButton Appearance="Appearance.Stealth"
+                                                  Title="Edit"
+                                                  OnClick="@(async () => await EditQnAAsync(context))">
+                                        Edit
+                                    </FluentButton>
+                                    <FluentButton Appearance="Appearance.Stealth"
+                                                  Title="Delete"
+                                                  OnClick="@(async () => await DeleteQnAAsync(context))">
+                                        Delete
+                                    </FluentButton>
+                                </FluentStack>
+                            </TemplateColumn>
+                        </FluentDataGrid>
+                    </div>
+                }
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>
+</FluentGrid>
+
+@* Import Dialog *@
+<FluentDialog @bind-Hidden="@isImportDialogHidden" Modal="true" TrapFocus="true" PreventScroll="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <h4 style="margin: 0;">Import Excel</h4>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <p style="margin: 0; color: var(--neutral-foreground-hint);">
+                Upload Excel file with columns: <strong>Question, Answer, Tags, Remark</strong>
+            </p>
+            <div class="file-upload-area">
+                <InputFile OnChange="OnFileSelected" accept=".xlsx,.xls" />
+                <p>Drag file here or click to browse</p>
+            </div>
+            @if (isUploading)
+            {
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentProgressRing Style="width: 24px; height: 24px;" />
+                    <span>Uploading...</span>
+                </FluentStack>
+            }
+        </FluentStack>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Outline" OnClick="CloseImportDialog">
+            Close
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<QnA> qnaList = new();
+    private QnA currentQnA = new();
+    private string searchKeyword = string.Empty;
+    private string searchTags = string.Empty;
+    private bool isLoading = false;
+    private bool isSaving = false;
+    private bool isSearching = false;
+    private bool isEditing = false;
+    private bool isUploading = false;
+    private bool isImportDialogHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAll();
+    }
+
+    private void OpenImportDialog()
+    {
+        isImportDialogHidden = false;
+    }
+
+    private void CloseImportDialog()
+    {
+        isImportDialogHidden = true;
+    }
+
+    private async Task LoadAll()
+    {
+        isLoading = true;
+        try
+        {
+            qnaList = await QnAService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SearchQnA()
+    {
+        isSearching = true;
+        try
+        {
+            qnaList = await QnAService.SearchAsync(searchKeyword, searchTags);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Search failed: {ex.Message}");
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchKeyword = string.Empty;
+        searchTags = string.Empty;
+    }
+
+    private async Task SaveQnA()
+    {
+        if (string.IsNullOrWhiteSpace(currentQnA.Question) || string.IsNullOrWhiteSpace(currentQnA.Answer))
+        {
+            ToastService.ShowWarning("Question and Answer are required.");
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (isEditing)
+            {
+                await QnAService.UpdateAsync(currentQnA);
+                ToastService.ShowSuccess("Q&A updated successfully.");
+            }
+            else
+            {
+                await QnAService.CreateAsync(currentQnA);
+                ToastService.ShowSuccess("Q&A added successfully.");
+            }
+            currentQnA = new();
+            isEditing = false;
+            await LoadAll();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private Task EditQnAAsync(QnA qna)
+    {
+        currentQnA = new QnA
+        {
+            Id = qna.Id,
+            Question = qna.Question,
+            Answer = qna.Answer,
+            Tags = qna.Tags,
+            Remark = qna.Remark
+        };
+        isEditing = true;
+        return Task.CompletedTask;
+    }
+
+    private void CancelEdit()
+    {
+        currentQnA = new();
+        isEditing = false;
+    }
+
+    private async Task DeleteQnAAsync(QnA qna)
+    {
+        try
+        {
+            var result = await QnAService.DeleteAsync(qna.Id);
+            if (result)
+            {
+                ToastService.ShowSuccess("Q&A deleted successfully.");
+                await LoadAll();
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to delete: {ex.Message}");
+        }
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            var file = e.File;
+            if (file == null)
+            {
+                ToastService.ShowWarning("No file selected.");
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            var qnas = ParseExcel(memoryStream);
+            if (qnas.Count > 0)
+            {
+                var count = await QnAService.ImportFromExcelAsync(qnas);
+                ToastService.ShowSuccess($"Successfully imported {count} Q&A records.");
+                await LoadAll();
+                CloseImportDialog();
+            }
+            else
+            {
+                ToastService.ShowWarning("No valid data found in Excel file.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Import failed: {ex.Message}");
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private List<QnA> ParseExcel(Stream stream)
+    {
+        var qnas = new List<QnA>();
+
+        using var workbook = new ClosedXML.Excel.XLWorkbook(stream);
+        var worksheet = workbook.Worksheets.First();
+        var rows = worksheet.RangeUsed()?.RowsUsed().Skip(1); // Skip header row
+
+        if (rows == null) return qnas;
+
+        foreach (var row in rows)
+        {
+            var question = row.Cell(1).GetString()?.Trim();
+            var answer = row.Cell(2).GetString()?.Trim();
+            var tags = row.Cell(3).GetString()?.Trim();
+            var remark = row.Cell(4).GetString()?.Trim();
+
+            if (!string.IsNullOrEmpty(question) && !string.IsNullOrEmpty(answer))
+            {
+                qnas.Add(new QnA
+                {
+                    Question = question,
+                    Answer = answer,
+                    Tags = tags,
+                    Remark = remark
+                });
+            }
+        }
+
+        return qnas;
+    }
+}

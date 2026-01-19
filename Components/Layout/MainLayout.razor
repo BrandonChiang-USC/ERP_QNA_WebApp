@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+
+<FluentLayout>
+    <FluentHeader>
+        <h3 style="margin: 0; color: white;">ERP Q&A System</h3>
+    </FluentHeader>
+    <FluentBodyContent>
+        <div class="content-container">
+            @Body
+        </div>
+    </FluentBodyContent>
+    <FluentFooter>
+        <span style="color: var(--neutral-foreground-hint);">ERP Q&A System &copy; 2026</span>
+    </FluentFooter>
+</FluentLayout>
+
+<FluentToastProvider />
+<FluentDialogProvider />
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">X</span>
+</div>
