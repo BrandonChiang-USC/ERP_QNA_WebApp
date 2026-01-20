@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+using Dapper;
 using ERP_QNA_WebApp.Data;
 using ERP_QNA_WebApp.Models;
 
@@ -6,92 +6,155 @@ namespace ERP_QNA_WebApp.Services;
 
 public class QnAService
 {
-    private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IDbConnectionFactory _connectionFactory;
 
-    public QnAService(IDbContextFactory<AppDbContext> contextFactory)
+    public QnAService(IDbConnectionFactory connectionFactory)
     {
-        _contextFactory = contextFactory;
+        _connectionFactory = connectionFactory;
     }
 
     public async Task<List<QnA>> GetAllAsync()
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.QnAs.OrderByDescending(q => q.CreatedAt).ToListAsync();
+        using var connection = _connectionFactory.CreateConnection();
+        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM qna ORDER BY created_at DESC";
+        var result = await connection.QueryAsync<QnA>(sql);
+        return result.ToList();
     }
 
     public async Task<List<QnA>> SearchAsync(string? keyword, string? tags)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.QnAs.AsQueryable();
+        using var connection = _connectionFactory.CreateConnection();
+
+        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM qna WHERE 1=1";
+        var parameters = new DynamicParameters();
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            var lowerKeyword = keyword.ToLower();
-            query = query.Where(q =>
-                q.Question.ToLower().Contains(lowerKeyword) ||
-                q.Answer.ToLower().Contains(lowerKeyword) ||
-                (q.Remark != null && q.Remark.ToLower().Contains(lowerKeyword)));
+            if (_connectionFactory.DatabaseProvider == "PostgreSQL")
+            {
+                sql += " AND (LOWER(question) LIKE @Keyword OR LOWER(answer) LIKE @Keyword OR LOWER(COALESCE(remark, '')) LIKE @Keyword)";
+            }
+            else
+            {
+                sql += " AND (LOWER(question) LIKE @Keyword OR LOWER(answer) LIKE @Keyword OR LOWER(ISNULL(remark, '')) LIKE @Keyword)";
+            }
+            parameters.Add("Keyword", $"%{keyword.ToLower()}%");
         }
 
         if (!string.IsNullOrWhiteSpace(tags))
         {
-            var lowerTags = tags.ToLower();
-            query = query.Where(q => q.Tags != null && q.Tags.ToLower().Contains(lowerTags));
+            if (_connectionFactory.DatabaseProvider == "PostgreSQL")
+            {
+                sql += " AND LOWER(COALESCE(tags, '')) LIKE @Tags";
+            }
+            else
+            {
+                sql += " AND LOWER(ISNULL(tags, '')) LIKE @Tags";
+            }
+            parameters.Add("Tags", $"%{tags.ToLower()}%");
         }
 
-        return await query.OrderByDescending(q => q.CreatedAt).ToListAsync();
+        sql += " ORDER BY created_at DESC";
+
+        var result = await connection.QueryAsync<QnA>(sql, parameters);
+        return result.ToList();
     }
 
     public async Task<QnA?> GetByIdAsync(int id)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.QnAs.FindAsync(id);
+        using var connection = _connectionFactory.CreateConnection();
+        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM qna WHERE id = @Id";
+        return await connection.QueryFirstOrDefaultAsync<QnA>(sql, new { Id = id });
     }
 
     public async Task<QnA> CreateAsync(QnA qna)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
+        using var connection = _connectionFactory.CreateConnection();
         qna.CreatedAt = DateTime.UtcNow;
-        context.QnAs.Add(qna);
-        await context.SaveChangesAsync();
+
+        string sql;
+        if (_connectionFactory.DatabaseProvider == "PostgreSQL")
+        {
+            sql = """
+                INSERT INTO qna (question, answer, tags, remark, created_at)
+                VALUES (@Question, @Answer, @Tags, @Remark, @CreatedAt)
+                RETURNING id
+                """;
+        }
+        else
+        {
+            sql = """
+                INSERT INTO qna (question, answer, tags, remark, created_at)
+                VALUES (@Question, @Answer, @Tags, @Remark, @CreatedAt);
+                SELECT CAST(SCOPE_IDENTITY() AS INT)
+                """;
+        }
+
+        qna.Id = await connection.ExecuteScalarAsync<int>(sql, qna);
         return qna;
     }
 
     public async Task<QnA?> UpdateAsync(QnA qna)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        var existing = await context.QnAs.FindAsync(qna.Id);
+        using var connection = _connectionFactory.CreateConnection();
+
+        var existing = await GetByIdAsync(qna.Id);
         if (existing == null) return null;
 
-        existing.Question = qna.Question;
-        existing.Answer = qna.Answer;
-        existing.Tags = qna.Tags;
-        existing.Remark = qna.Remark;
-        existing.UpdatedAt = DateTime.UtcNow;
+        qna.UpdatedAt = DateTime.UtcNow;
 
-        await context.SaveChangesAsync();
-        return existing;
+        var sql = """
+            UPDATE qna SET
+                question = @Question,
+                answer = @Answer,
+                tags = @Tags,
+                remark = @Remark,
+                updated_at = @UpdatedAt
+            WHERE id = @Id
+            """;
+
+        await connection.ExecuteAsync(sql, qna);
+        return qna;
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        var qna = await context.QnAs.FindAsync(id);
-        if (qna == null) return false;
+        using var connection = _connectionFactory.CreateConnection();
 
-        context.QnAs.Remove(qna);
-        await context.SaveChangesAsync();
-        return true;
+        var sql = "DELETE FROM qna WHERE id = @Id";
+        var affectedRows = await connection.ExecuteAsync(sql, new { Id = id });
+        return affectedRows > 0;
     }
 
     public async Task<int> ImportFromExcelAsync(List<QnA> qnas)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        foreach (var qna in qnas)
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+
+        try
         {
-            qna.CreatedAt = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            var sql = """
+                INSERT INTO qna (question, answer, tags, remark, created_at)
+                VALUES (@Question, @Answer, @Tags, @Remark, @CreatedAt)
+                """;
+
+            var count = 0;
+            foreach (var qna in qnas)
+            {
+                qna.CreatedAt = now;
+                await connection.ExecuteAsync(sql, qna, transaction);
+                count++;
+            }
+
+            transaction.Commit();
+            return count;
         }
-        context.QnAs.AddRange(qnas);
-        return await context.SaveChangesAsync();
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
     }
 }

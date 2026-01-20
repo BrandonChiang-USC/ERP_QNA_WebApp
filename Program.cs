@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.FluentUI.AspNetCore.Components;
 using ERP_QNA_WebApp.Components;
 using ERP_QNA_WebApp.Data;
@@ -13,20 +12,32 @@ builder.Services.AddRazorComponents()
 // Add Fluent UI
 builder.Services.AddFluentUIComponents();
 
-// Add PostgreSQL Database
-builder.Services.AddDbContextFactory<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Configure Database Connection Factory
+var databaseProvider = builder.Configuration.GetValue<string>("Database:Provider") ?? "PostgreSQL";
+var connectionString = builder.Configuration.GetConnectionString(databaseProvider)
+    ?? throw new InvalidOperationException($"Connection string '{databaseProvider}' not found.");
+
+builder.Services.AddSingleton<IDbConnectionFactory>(sp =>
+{
+    return databaseProvider.ToUpperInvariant() switch
+    {
+        "POSTGRESQL" => new PostgreSqlConnectionFactory(connectionString),
+        "MSSQL" => new MsSqlConnectionFactory(connectionString),
+        _ => throw new NotSupportedException($"Database provider '{databaseProvider}' is not supported. Use 'PostgreSQL' or 'MSSQL'.")
+    };
+});
 
 // Add Services
 builder.Services.AddScoped<QnAService>();
 
 var app = builder.Build();
 
-// Ensure database is created
+// Initialize database (create tables if not exist)
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await context.Database.EnsureCreatedAsync();
+    var connectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>();
+    var initializer = new DatabaseInitializer(connectionFactory);
+    await initializer.InitializeAsync();
 }
 
 // Configure the HTTP request pipeline.

@@ -3,8 +3,9 @@
 @inject QnAService QnAService
 @inject IToastService ToastService
 @inject IDialogService DialogService
+@inject IJSRuntime JS
 
-<PageTitle>ERP Q&A System</PageTitle>
+<PageTitle>ERP Q&A 維護作業</PageTitle>
 
 <FluentGrid Spacing="3">
     @* Input Section *@
@@ -30,7 +31,7 @@
                                  Style="width: 100%;" />
 
                 <FluentTextField @bind-Value="currentQnA.Remark"
-                                 Label="Remark"
+                                 Label="備註"
                                  Placeholder="Additional notes..."
                                  Style="width: 100%;" />
 
@@ -46,8 +47,11 @@
                             </FluentButton>
                         }
                     </FluentStack>
+                    <FluentButton Appearance="Appearance.Outline" OnClick="GenerateTemplate" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())">
+                        產生 Excel 範本
+                    </FluentButton>
                     <FluentButton Appearance="Appearance.Outline" OnClick="OpenImportDialog" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())">
-                        Import Excel
+                        上傳 Excel
                     </FluentButton>
                 </FluentStack>
             </FluentStack>
@@ -179,6 +183,28 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadAll();
+    }
+
+    private async Task GenerateTemplate()
+    {
+        var headers = new[] { "Question", "Answer", "Tags", "Remark" };
+        using var workbook = new ClosedXML.Excel.XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("QnA_Template");
+        for (int i = 0; i < headers.Length; i++)
+        {
+            worksheet.Cell(1, i + 1).Value = headers[i];
+            worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+        }
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        var buffer = stream.ToArray();
+        var base64 = Convert.ToBase64String(buffer);
+        var fileName = "QnA_Import_Template.xlsx";
+        var url = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64}";
+
+        await JS.InvokeVoidAsync("downloadFile", url, fileName);
     }
 
     private void OpenImportDialog()
