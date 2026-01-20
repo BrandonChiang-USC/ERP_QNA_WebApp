@@ -12,47 +12,85 @@
     <FluentGridItem xs="12" md="6">
         <FluentCard>
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                <h4>@(isEditing ? "Edit Q&A" : "New Q&A")</h4>
+                <h4>@(isEditing ? "編輯 Q&A" : "新增 Q&A")</h4>
 
                 <FluentTextField @bind-Value="currentQnA.Question"
-                                 Label="Question"
-                                 Placeholder="Enter question..."
-                                 Style="width: 100%;" />
+                                 Label="問題"
+                                 Placeholder="輸入問題..."
+                                 Style="width: 100%;"
+                                 AutoComplete="off" />
 
                 <FluentTextArea @bind-Value="currentQnA.Answer"
-                                Label="Answer"
-                                Placeholder="Enter answer..."
+                                Label="答案"
+                                Placeholder="輸入答案..."
                                 Rows="4"
                                 Style="width: 100%;" />
 
-                <FluentTextField @bind-Value="currentQnA.Tags"
-                                 Label="Tags"
-                                 Placeholder="e.g., ERP, Finance, HR"
-                                 Style="width: 100%;" />
+                <div style="width: 100%;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 600;">標籤</label>
+                    <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="5" Style="margin-bottom: 8px;">
+                        @foreach (var tag in currentTags)
+                        {
+                            <FluentBadge Appearance="Appearance.Neutral" Style="padding: 4px 8px; display: flex; align-items: center; gap: 4px;">
+                                @tag
+                                <FluentButton Appearance="Appearance.Lightweight" 
+                                              OnClick="@(() => RemoveTag(tag))"
+                                              Style="padding: 0; width: 16px; height: 16px; min-width: 16px; border-radius: 50%;">
+                                    ✕
+                                </FluentButton>
+                            </FluentBadge>
+                        }
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
+                        <FluentSelect @bind-Value="selectedTag" 
+                                      Style="flex: 1;"
+                                      Items="@availableTags"
+                                      OptionText="@(t => t)"
+                                      OptionValue="@(t => t)"
+                                      Placeholder="選擇標籤...">
+                        </FluentSelect>
+                        <FluentButton Appearance="Appearance.Outline" OnClick="AddSelectedTag" Disabled="@string.IsNullOrEmpty(selectedTag)">
+                            加入
+                        </FluentButton>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5" Style="margin-top: 5px;">
+                        <FluentTextField @bind-Value="newTag" 
+                                         Placeholder="或輸入新標籤..."
+                                         Style="flex: 1;"
+                                         AutoComplete="off"
+                                         @onkeydown="HandleTagKeyDown" />
+                        <FluentButton Appearance="Appearance.Outline" OnClick="AddNewTag" Disabled="@string.IsNullOrEmpty(newTag)">
+                            新增
+                        </FluentButton>
+                    </FluentStack>
+                </div>
 
                 <FluentTextField @bind-Value="currentQnA.Remark"
                                  Label="備註"
                                  Placeholder="Additional notes..."
-                                 Style="width: 100%;" />
+                                 Style="width: 100%;"
+                                 AutoComplete="off" />
 
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="width: 100%;">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
                         <FluentButton Appearance="Appearance.Accent" OnClick="SaveQnA" Disabled="@isSaving">
-                            @(isEditing ? "Update" : "Add")
+                            @(isEditing ? "修改" : "新增")
                         </FluentButton>
                         @if (isEditing)
                         {
                             <FluentButton Appearance="Appearance.Outline" OnClick="CancelEdit">
-                                Cancel
+                                取消
                             </FluentButton>
                         }
                     </FluentStack>
-                    <FluentButton Appearance="Appearance.Outline" OnClick="GenerateTemplate" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())">
-                        產生 Excel 範本
-                    </FluentButton>
-                    <FluentButton Appearance="Appearance.Outline" OnClick="OpenImportDialog" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())">
-                        上傳 Excel
-                    </FluentButton>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                        <FluentButton Appearance="Appearance.Outline" OnClick="GenerateTemplate" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())">
+                            產生範本
+                        </FluentButton>
+                        <FluentButton Appearance="Appearance.Outline" OnClick="OpenImportDialog" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())">
+                            上傳 Excel
+                        </FluentButton>
+                    </FluentStack>
                 </FluentStack>
             </FluentStack>
         </FluentCard>
@@ -62,27 +100,29 @@
     <FluentGridItem xs="12" md="6">
         <FluentCard>
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                <h4>Search Q&A</h4>
+                <h4>搜尋 Q&A</h4>
 
                 <FluentTextField @bind-Value="searchKeyword"
-                                 Label="Keyword"
-                                 Placeholder="Search in question, answer, remark..."
-                                 Style="width: 100%;" />
+                                 Label="關鍵字"
+                                 Placeholder="在問題、答案、備註中搜尋..."
+                                 Style="width: 100%;"
+                                 AutoComplete="off" />
 
                 <FluentTextField @bind-Value="searchTags"
-                                 Label="Tags"
-                                 Placeholder="Filter by tags..."
-                                 Style="width: 100%;" />
+                                 Label="標籤"
+                                 Placeholder="以標籤篩選..."
+                                 Style="width: 100%;"
+                                 AutoComplete="off" />
 
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
                     <FluentButton Appearance="Appearance.Accent" OnClick="SearchQnA" Disabled="@isSearching">
-                        Search
+                        搜尋
                     </FluentButton>
                     <FluentButton Appearance="Appearance.Outline" OnClick="ClearSearch">
-                        Clear
+                        清除
                     </FluentButton>
                     <FluentButton Appearance="Appearance.Outline" OnClick="LoadAll">
-                        Show All
+                        顯示全部
                     </FluentButton>
                 </FluentStack>
             </FluentStack>
@@ -93,7 +133,7 @@
     <FluentGridItem xs="12">
         <FluentCard>
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                <h4>Results (@qnaList.Count items)</h4>
+                <h4>結果 (@qnaList.Count 筆)</h4>
 
                 @if (isLoading)
                 {
@@ -102,29 +142,48 @@
                 else if (qnaList.Count == 0)
                 {
                     <FluentMessageBar Intent="@MessageIntent.Info">
-                        No Q&A records found. Add new entries or import from Excel.
+                        尚無 Q&A 紀錄。請新增或從 Excel 匯入。
                     </FluentMessageBar>
                 }
                 else
                 {
                     <div style="overflow-x: auto;">
-                        <FluentDataGrid Items="@qnaList.AsQueryable()" ResizableColumns="true" Style="width: 100%;">
+                        <FluentDataGrid Items="@qnaList.AsQueryable()" 
+                                        ResizableColumns="true" 
+                                        ShowHover="true"
+                                        Style="width: 100%;">
                             <PropertyColumn Property="@(q => q.Id)" Title="ID" Width="60px" />
-                            <PropertyColumn Property="@(q => q.Question)" Title="Question" />
-                            <PropertyColumn Property="@(q => q.Answer)" Title="Answer" />
-                            <PropertyColumn Property="@(q => q.Tags)" Title="Tags" Width="120px" />
-                            <PropertyColumn Property="@(q => q.Remark)" Title="Remark" Width="120px" />
-                            <TemplateColumn Title="Actions" Width="120px">
+                            <TemplateColumn Title="問題">
+                                <div @ondblclick="@(() => EditQnAAsync(context))" @ondblclick:preventDefault="true" style="cursor: pointer; user-select: none;">
+                                    @context.Question
+                                </div>
+                            </TemplateColumn>
+                            <TemplateColumn Title="答案">
+                                <div @ondblclick="@(() => EditQnAAsync(context))" @ondblclick:preventDefault="true" style="cursor: pointer; user-select: none;">
+                                    @context.Answer
+                                </div>
+                            </TemplateColumn>
+                            <TemplateColumn Title="標籤" Width="120px">
+                                <div @ondblclick="@(() => EditQnAAsync(context))" @ondblclick:preventDefault="true" style="cursor: pointer; user-select: none;">
+                                    @context.Tags
+                                </div>
+                            </TemplateColumn>
+                            <TemplateColumn Title="備註" Width="120px">
+                                <div @ondblclick="@(() => EditQnAAsync(context))" @ondblclick:preventDefault="true" style="cursor: pointer; user-select: none;">
+                                    @context.Remark
+                                </div>
+                            </TemplateColumn>
+                            <TemplateColumn Title="操作" Width="120px">
                                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
                                     <FluentButton Appearance="Appearance.Stealth"
-                                                  Title="Edit"
+                                                  Title="編輯"
                                                   OnClick="@(async () => await EditQnAAsync(context))">
-                                        Edit
+                                        編輯
                                     </FluentButton>
                                     <FluentButton Appearance="Appearance.Stealth"
-                                                  Title="Delete"
+                                                  Title="刪除"
                                                   OnClick="@(async () => await DeleteQnAAsync(context))">
-                                        Delete
+                                        刪除
                                     </FluentButton>
                                 </FluentStack>
                             </TemplateColumn>
@@ -140,13 +199,13 @@
 <FluentDialog @bind-Hidden="@isImportDialogHidden" Modal="true" TrapFocus="true" PreventScroll="true">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-            <h4 style="margin: 0;">Import Excel</h4>
+            <h4 style="margin: 0;">匯入 Excel</h4>
         </FluentStack>
     </FluentDialogHeader>
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
             <p style="margin: 0; color: var(--neutral-foreground-hint);">
-                Upload Excel file with columns: <strong>Question, Answer, Tags, Remark</strong>
+                上傳包含以下欄位的 Excel 檔案：<strong>問題、答案、標籤、備註</strong>
             </p>
             <div class="file-upload-area">
                 <InputFile OnChange="OnFileSelected" accept=".xlsx,.xls" />
@@ -180,14 +239,55 @@
     private bool isUploading = false;
     private bool isImportDialogHidden = true;
 
+    // 標籤管理
+    private List<string> currentTags = new();
+    private string selectedTag = string.Empty;
+    private string newTag = string.Empty;
+    private List<string> availableTags = new() { "ERP", "Finance", "HR", "Sales", "IT", "Procurement", "Inventory", "Accounting" };
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAll();
     }
 
+    private void AddSelectedTag()
+    {
+        if (!string.IsNullOrWhiteSpace(selectedTag) && !currentTags.Contains(selectedTag))
+        {
+            currentTags.Add(selectedTag);
+            selectedTag = string.Empty;
+        }
+    }
+
+    private void AddNewTag()
+    {
+        if (!string.IsNullOrWhiteSpace(newTag) && !currentTags.Contains(newTag))
+        {
+            currentTags.Add(newTag);
+            if (!availableTags.Contains(newTag))
+            {
+                availableTags.Add(newTag);
+            }
+            newTag = string.Empty;
+        }
+    }
+
+    private void RemoveTag(string tag)
+    {
+        currentTags.Remove(tag);
+    }
+
+    private void HandleTagKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTag))
+        {
+            AddNewTag();
+        }
+    }
+
     private async Task GenerateTemplate()
     {
-        var headers = new[] { "Question", "Answer", "Tags", "Remark" };
+        var headers = new[] { "問題", "答案", "標籤", "備註" };
         using var workbook = new ClosedXML.Excel.XLWorkbook();
         var worksheet = workbook.Worksheets.Add("QnA_Template");
         for (int i = 0; i < headers.Length; i++)
@@ -223,6 +323,19 @@
         try
         {
             qnaList = await QnAService.GetAllAsync();
+            
+            // 收集所有已存在的標籤
+            var existingTags = qnaList
+                .Where(q => !string.IsNullOrWhiteSpace(q.Tags))
+                .SelectMany(q => q.Tags!.Split(',').Select(t => t.Trim()))
+                .Where(t => !string.IsNullOrEmpty(t))
+                .Distinct()
+                .OrderBy(t => t)
+                .ToList();
+            
+            // 合併預設標籤和已存在的標籤
+            var defaultTags = new List<string> { "ERP", "Finance", "HR", "Sales", "IT", "Procurement", "Inventory", "Accounting" };
+            availableTags = defaultTags.Union(existingTags).Distinct().OrderBy(t => t).ToList();
         }
         catch (Exception ex)
         {
@@ -265,6 +378,9 @@
             return;
         }
 
+        // 將標籤列表轉換為字串
+        currentQnA.Tags = string.Join(", ", currentTags);
+
         isSaving = true;
         try
         {
@@ -279,6 +395,7 @@
                 ToastService.ShowSuccess("Q&A added successfully.");
             }
             currentQnA = new();
+            currentTags.Clear();
             isEditing = false;
             await LoadAll();
         }
@@ -302,6 +419,12 @@
             Tags = qna.Tags,
             Remark = qna.Remark
         };
+        
+        // 將標籤字串轉換為列表
+        currentTags = string.IsNullOrWhiteSpace(qna.Tags) 
+            ? new List<string>() 
+            : qna.Tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToList();
+        
         isEditing = true;
         return Task.CompletedTask;
     }
@@ -309,6 +432,7 @@
     private void CancelEdit()
     {
         currentQnA = new();
+        currentTags.Clear();
         isEditing = false;
     }
 
