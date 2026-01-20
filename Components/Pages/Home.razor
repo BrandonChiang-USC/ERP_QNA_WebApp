@@ -8,131 +8,132 @@
 <PageTitle>ERP Q&A 維護作業</PageTitle>
 
 <FluentGrid Spacing="3">
-    @* Input Section *@
-    <FluentGridItem xs="12" md="6">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                <h4>@(isEditing ? "編輯 Q&A" : "新增 Q&A")</h4>
+    @* Left Column *@
+    <FluentGridItem xs="12" md="6" Style="display: flex; flex-direction: column;">
+        <div style="display: flex; flex-direction: column; height: 100%;">
+            @* Input Section *@
+            <FluentCard Style="margin-bottom: 16px; flex: 1;">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                    <h4>@(isEditing ? "編輯 Q&A" : "新增 Q&A")</h4>
 
-                <FluentTextField @bind-Value="currentQnA.Question"
-                                 Label="問題"
-                                 Placeholder="輸入問題..."
-                                 Style="width: 100%;"
-                                 AutoComplete="off" />
+                    <FluentTextField @bind-Value="currentQnA.Question"
+                                     Label="問題"
+                                     Placeholder="輸入問題..."
+                                     Style="width: 100%;"
+                                     AutoComplete="off" />
 
-                <FluentTextArea @bind-Value="currentQnA.Answer"
-                                Label="答案"
-                                Placeholder="輸入答案..."
-                                Rows="4"
-                                Style="width: 100%;" />
+                    <FluentTextArea @bind-Value="currentQnA.Answer"
+                                    Label="答案"
+                                    Placeholder="輸入答案..."
+                                    Rows="4"
+                                    Style="width: 100%;" />
 
-                <div style="width: 100%;">
-                    <label style="display: block; margin-bottom: 4px; font-weight: 600;">標籤</label>
-                    <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="5" Style="margin-bottom: 8px;">
-                        @foreach (var tag in currentTags)
-                        {
-                            <FluentBadge Appearance="Appearance.Neutral" Style="padding: 4px 8px; display: flex; align-items: center; gap: 4px;">
-                                @tag
-                                <FluentButton Appearance="Appearance.Lightweight" 
-                                              OnClick="@(() => RemoveTag(tag))"
-                                              Style="padding: 0; width: 16px; height: 16px; min-width: 16px; border-radius: 50%;">
-                                    ✕
-                                </FluentButton>
-                            </FluentBadge>
-                        }
-                    </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
-                        <FluentSelect @bind-Value="selectedTag" 
-                                      Style="flex: 1;"
-                                      Items="@availableTags"
-                                      OptionText="@(t => t)"
-                                      OptionValue="@(t => t)"
-                                      Placeholder="選擇標籤...">
-                        </FluentSelect>
-                        <FluentButton Appearance="Appearance.Outline" OnClick="AddSelectedTag" Disabled="@string.IsNullOrEmpty(selectedTag)">
-                            加入
-                        </FluentButton>
-                    </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5" Style="margin-top: 5px;">
-                        <FluentTextField @bind-Value="newTag" 
-                                         Placeholder="或輸入新標籤..."
-                                         Style="flex: 1;"
-                                         AutoComplete="off"
-                                         @onkeydown="HandleTagKeyDown" />
-                        <FluentButton Appearance="Appearance.Outline" OnClick="AddNewTag" Disabled="@string.IsNullOrEmpty(newTag)">
-                            新增
-                        </FluentButton>
-                    </FluentStack>
-                </div>
-
-                <FluentTextField @bind-Value="currentQnA.Remark"
-                                 Label="備註"
-                                 Placeholder="Additional notes..."
-                                 Style="width: 100%;"
-                                 AutoComplete="off" />
-
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="width: 100%;">
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                        <FluentButton Appearance="Appearance.Accent" OnClick="SaveQnA" Disabled="@isSaving">
-                            @(isEditing ? "修改" : "新增")
-                        </FluentButton>
-                        @if (isEditing)
-                        {
-                            <FluentButton Appearance="Appearance.Outline" OnClick="CancelEdit">
-                                取消
+                    <div style="width: 100%;">
+                        <label style="display: block; margin-bottom: 4px; font-weight: 600;">標籤</label>
+                        <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="5" Style="margin-bottom: 8px;">
+                            @foreach (var tag in currentTags)
+                            {
+                                <FluentBadge Appearance="Appearance.Neutral" Style="padding: 4px 8px; display: flex; align-items: center; gap: 4px;">
+                                    @tag
+                                    <FluentButton Appearance="Appearance.Lightweight" 
+                                                  OnClick="@(() => RemoveTag(tag))"
+                                                  Style="padding: 0; width: 16px; height: 16px; min-width: 16px; border-radius: 50%;">
+                                        ✕
+                                    </FluentButton>
+                                </FluentBadge>
+                            }
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
+                            <FluentSelect @bind-Value="selectedTag" 
+                                          Style="flex: 1;"
+                                          Items="@availableTags"
+                                          OptionText="@(t => t)"
+                                          OptionValue="@(t => t)"
+                                          Placeholder="選擇標籤...">
+                            </FluentSelect>
+                            <FluentButton Appearance="Appearance.Outline" OnClick="AddSelectedTag" Disabled="@string.IsNullOrEmpty(selectedTag)">
+                                加入
                             </FluentButton>
-                        }
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5" Style="margin-top: 5px;">
+                            <FluentTextField @bind-Value="newTag" 
+                                             Placeholder="或輸入新標籤..."
+                                             Style="flex: 1;"
+                                             AutoComplete="off"
+                                             @onkeydown="HandleTagKeyDown" />
+                            <FluentButton Appearance="Appearance.Outline" OnClick="AddNewTag" Disabled="@string.IsNullOrEmpty(newTag)">
+                                新增
+                            </FluentButton>
+                        </FluentStack>
+                    </div>
+
+                    <FluentTextField @bind-Value="currentQnA.Remark"
+                                     Label="備註"
+                                     Placeholder="Additional notes..."
+                                     Style="width: 100%;"
+                                     AutoComplete="off" />
+
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="width: 100%;">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                            <FluentButton Appearance="Appearance.Accent" OnClick="SaveQnA" Disabled="@isSaving">
+                                @(isEditing ? "修改" : "新增")
+                            </FluentButton>
+                            @if (isEditing)
+                            {
+                                <FluentButton Appearance="Appearance.Outline" OnClick="CancelEdit">
+                                    取消
+                                </FluentButton>
+                            }
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                            <FluentButton Appearance="Appearance.Outline" OnClick="GenerateTemplate" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())">
+                                產生範本
+                            </FluentButton>
+                            <FluentButton Appearance="Appearance.Outline" OnClick="OpenImportDialog" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())">
+                                上傳 Excel
+                            </FluentButton>
+                        </FluentStack>
                     </FluentStack>
+                </FluentStack>
+            </FluentCard>
+
+            @* Query Section *@
+            <FluentCard>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                    <h4>搜尋 Q&A</h4>
+
+                    <FluentTextField @bind-Value="searchKeyword"
+                                     Label="關鍵字"
+                                     Placeholder="在問題、答案、備註中搜尋..."
+                                     Style="width: 100%;"
+                                     AutoComplete="off" />
+
+                    <FluentTextField @bind-Value="searchTags"
+                                     Label="標籤"
+                                     Placeholder="以標籤篩選..."
+                                     Style="width: 100%;"
+                                     AutoComplete="off" />
+
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                        <FluentButton Appearance="Appearance.Outline" OnClick="GenerateTemplate" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())">
-                            產生範本
+                        <FluentButton Appearance="Appearance.Accent" OnClick="SearchQnA" Disabled="@isSearching">
+                            搜尋
                         </FluentButton>
-                        <FluentButton Appearance="Appearance.Outline" OnClick="OpenImportDialog" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())">
-                            上傳 Excel
+                        <FluentButton Appearance="Appearance.Outline" OnClick="ClearSearch">
+                            清除
+                        </FluentButton>
+                        <FluentButton Appearance="Appearance.Outline" OnClick="LoadAll">
+                            顯示全部
                         </FluentButton>
                     </FluentStack>
                 </FluentStack>
-            </FluentStack>
-        </FluentCard>
+            </FluentCard>
+        </div>
     </FluentGridItem>
 
-    @* Query Section *@
-    <FluentGridItem xs="12" md="6">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                <h4>搜尋 Q&A</h4>
-
-                <FluentTextField @bind-Value="searchKeyword"
-                                 Label="關鍵字"
-                                 Placeholder="在問題、答案、備註中搜尋..."
-                                 Style="width: 100%;"
-                                 AutoComplete="off" />
-
-                <FluentTextField @bind-Value="searchTags"
-                                 Label="標籤"
-                                 Placeholder="以標籤篩選..."
-                                 Style="width: 100%;"
-                                 AutoComplete="off" />
-
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                    <FluentButton Appearance="Appearance.Accent" OnClick="SearchQnA" Disabled="@isSearching">
-                        搜尋
-                    </FluentButton>
-                    <FluentButton Appearance="Appearance.Outline" OnClick="ClearSearch">
-                        清除
-                    </FluentButton>
-                    <FluentButton Appearance="Appearance.Outline" OnClick="LoadAll">
-                        顯示全部
-                    </FluentButton>
-                </FluentStack>
-            </FluentStack>
-        </FluentCard>
-    </FluentGridItem>
-
-    @* Results Section *@
-    <FluentGridItem xs="12">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+    @* Results Section - Right Column *@
+    <FluentGridItem xs="12" md="6" Style="display: flex; flex-direction: column;">
+        <FluentCard Style="height: 100%; display: flex; flex-direction: column;">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Style="height: 100%;">
                 <h4>結果 (@qnaList.Count 筆)</h4>
 
                 @if (isLoading)
@@ -147,7 +148,7 @@
                 }
                 else
                 {
-                    <div style="overflow-x: auto;">
+                    <div style="overflow: auto; flex: 1;">
                         <FluentDataGrid Items="@qnaList.AsQueryable()" 
                                         ResizableColumns="true" 
                                         ShowHover="true"
