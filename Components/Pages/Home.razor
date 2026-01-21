@@ -228,6 +228,44 @@
     </FluentDialogFooter>
 </FluentDialog>
 
+@* Delete Confirmation Dialog *@
+<FluentDialog @bind-Hidden="@isDeleteDialogHidden" Modal="true" TrapFocus="true" PreventScroll="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <h4 style="margin: 0;">確認刪除</h4>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <p style="margin: 0;">您確定要刪除這筆 Q&A 資料嗎？</p>
+            @if (qnaToDelete != null)
+            {
+                <div style="padding: 10px; background-color: var(--neutral-layer-2); border-radius: 4px;">
+                    <p style="margin: 0 0 5px 0;"><strong>問題：</strong>@qnaToDelete.Question</p>
+                    <p style="margin: 0;"><strong>答案：</strong>@(qnaToDelete.Answer.Length > 100 ? qnaToDelete.Answer.Substring(0, 100) + "..." : qnaToDelete.Answer)</p>
+                </div>
+            }
+            <p style="margin: 0; color: var(--error-color);"><strong>此操作無法復原！</strong></p>
+        </FluentStack>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Outline" OnClick="CancelDelete">
+            取消
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="ConfirmDelete" Disabled="@isDeleting">
+            @if (isDeleting)
+            {
+                <FluentProgressRing Style="width: 16px; height: 16px;" />
+                <span style="margin-left: 8px;">刪除中...</span>
+            }
+            else
+            {
+                <span>確認刪除</span>
+            }
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
 @code {
     private List<QnA> qnaList = new();
     private QnA currentQnA = new();
@@ -239,6 +277,9 @@
     private bool isEditing = false;
     private bool isUploading = false;
     private bool isImportDialogHidden = true;
+    private bool isDeleteDialogHidden = true;
+    private bool isDeleting = false;
+    private QnA? qnaToDelete = null;
 
     // 標籤管理
     private List<string> currentTags = new();
@@ -437,20 +478,42 @@
         isEditing = false;
     }
 
-    private async Task DeleteQnAAsync(QnA qna)
+    private Task DeleteQnAAsync(QnA qna)
     {
+        qnaToDelete = qna;
+        isDeleteDialogHidden = false;
+        return Task.CompletedTask;
+    }
+
+    private void CancelDelete()
+    {
+        isDeleteDialogHidden = true;
+        qnaToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (qnaToDelete == null) return;
+
+        isDeleting = true;
         try
         {
-            var result = await QnAService.DeleteAsync(qna.Id);
+            var result = await QnAService.DeleteAsync(qnaToDelete.Id);
             if (result)
             {
                 ToastService.ShowSuccess("Q&A deleted successfully.");
                 await LoadAll();
+                isDeleteDialogHidden = true;
+                qnaToDelete = null;
             }
         }
         catch (Exception ex)
         {
             ToastService.ShowError($"Failed to delete: {ex.Message}");
+        }
+        finally
+        {
+            isDeleting = false;
         }
     }
 
