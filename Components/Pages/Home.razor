@@ -57,7 +57,7 @@
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5" Style="margin-top: 5px;">
                             <FluentTextField @bind-Value="newTag" 
-                                             Placeholder="或輸入新標籤..."
+                                             Placeholder="或輸入新標籤(輸入後要按新增才會生效)..."
                                              Style="flex: 1;"
                                              AutoComplete="off"
                                              @onkeydown="HandleTagKeyDown" />
@@ -244,7 +244,7 @@
     private List<string> currentTags = new();
     private string selectedTag = string.Empty;
     private string newTag = string.Empty;
-    private List<string> availableTags = new() { "ERP", "Finance", "HR", "Sales", "IT", "Procurement", "Inventory", "Accounting" };
+    private List<string> availableTags = new() {  };
 
     protected override async Task OnInitializedAsync()
     {
@@ -335,7 +335,7 @@
                 .ToList();
             
             // 合併預設標籤和已存在的標籤
-            var defaultTags = new List<string> { "ERP", "Finance", "HR", "Sales", "IT", "Procurement", "Inventory", "Accounting" };
+            var defaultTags = new List<string> {  };
             availableTags = defaultTags.Union(existingTags).Distinct().OrderBy(t => t).ToList();
         }
         catch (Exception ex)
