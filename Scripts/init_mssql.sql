@@ -10,8 +10,8 @@
 -- GO
 
 -- Create table
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='qna' AND xtype='U')
-CREATE TABLE qna (
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ERP_QNA' AND xtype='U')
+CREATE TABLE ERP_QNA (
     id INT IDENTITY(1,1) PRIMARY KEY,
     question NVARCHAR(2000) NOT NULL,
     answer NVARCHAR(MAX) NOT NULL,
@@ -23,10 +23,10 @@ CREATE TABLE qna (
 GO
 
 -- Create index for better search performance
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_qna_created_at' AND object_id = OBJECT_ID('qna'))
-CREATE INDEX idx_qna_created_at ON qna(created_at DESC);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_qna_created_at' AND object_id = OBJECT_ID('ERP_QNA'))
+CREATE INDEX idx_qna_created_at ON ERP_QNA(created_at DESC);
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_qna_tags' AND object_id = OBJECT_ID('qna'))
-CREATE INDEX idx_qna_tags ON qna(tags) WHERE tags IS NOT NULL;
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_qna_tags' AND object_id = OBJECT_ID('ERP_QNA'))
+CREATE INDEX idx_qna_tags ON ERP_QNA(tags) WHERE tags IS NOT NULL;
 GO

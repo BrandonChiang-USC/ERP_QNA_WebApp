@@ -16,7 +16,7 @@ public class QnAService
     public async Task<List<QnA>> GetAllAsync()
     {
         using var connection = _connectionFactory.CreateConnection();
-        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM qna ORDER BY created_at DESC";
+        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM ERP_QNA ORDER BY created_at DESC";
         var result = await connection.QueryAsync<QnA>(sql);
         return result.ToList();
     }
@@ -25,7 +25,7 @@ public class QnAService
     {
         using var connection = _connectionFactory.CreateConnection();
 
-        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM qna WHERE 1=1";
+        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM ERP_QNA WHERE 1=1";
         var parameters = new DynamicParameters();
 
         if (!string.IsNullOrWhiteSpace(keyword))
@@ -63,7 +63,7 @@ public class QnAService
     public async Task<QnA?> GetByIdAsync(int id)
     {
         using var connection = _connectionFactory.CreateConnection();
-        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM qna WHERE id = @Id";
+        var sql = "SELECT id AS Id, question AS Question, answer AS Answer, tags AS Tags, remark AS Remark, created_at AS CreatedAt, updated_at AS UpdatedAt FROM ERP_QNA WHERE id = @Id";
         return await connection.QueryFirstOrDefaultAsync<QnA>(sql, new { Id = id });
     }
 
@@ -76,7 +76,7 @@ public class QnAService
         if (_connectionFactory.DatabaseProvider == "PostgreSQL")
         {
             sql = """
-                INSERT INTO qna (question, answer, tags, remark, created_at)
+                INSERT INTO ERP_QNA (question, answer, tags, remark, created_at)
                 VALUES (@Question, @Answer, @Tags, @Remark, @CreatedAt)
                 RETURNING id
                 """;
@@ -84,7 +84,7 @@ public class QnAService
         else
         {
             sql = """
-                INSERT INTO qna (question, answer, tags, remark, created_at)
+                INSERT INTO ERP_QNA (question, answer, tags, remark, created_at)
                 VALUES (@Question, @Answer, @Tags, @Remark, @CreatedAt);
                 SELECT CAST(SCOPE_IDENTITY() AS INT)
                 """;
@@ -104,7 +104,7 @@ public class QnAService
         qna.UpdatedAt = DateTime.UtcNow;
 
         var sql = """
-            UPDATE qna SET
+            UPDATE ERP_QNA SET
                 question = @Question,
                 answer = @Answer,
                 tags = @Tags,
@@ -121,7 +121,7 @@ public class QnAService
     {
         using var connection = _connectionFactory.CreateConnection();
 
-        var sql = "DELETE FROM qna WHERE id = @Id";
+        var sql = "DELETE FROM ERP_QNA WHERE id = @Id";
         var affectedRows = await connection.ExecuteAsync(sql, new { Id = id });
         return affectedRows > 0;
     }
@@ -136,7 +136,7 @@ public class QnAService
         {
             var now = DateTime.UtcNow;
             var sql = """
-                INSERT INTO qna (question, answer, tags, remark, created_at)
+                INSERT INTO ERP_QNA (question, answer, tags, remark, created_at)
                 VALUES (@Question, @Answer, @Tags, @Remark, @CreatedAt)
                 """;
 

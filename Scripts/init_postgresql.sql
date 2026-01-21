@@ -5,7 +5,7 @@
 -- CREATE DATABASE erp_qna;
 
 -- Connect to erp_qna database, then run:
-CREATE TABLE IF NOT EXISTS qna (
+CREATE TABLE IF NOT EXISTS ERP_QNA (
     id SERIAL PRIMARY KEY,
     question VARCHAR(2000) NOT NULL,
     answer TEXT NOT NULL,
@@ -16,5 +16,5 @@ CREATE TABLE IF NOT EXISTS qna (
 );
 
 -- Create index for better search performance
-CREATE INDEX IF NOT EXISTS idx_qna_created_at ON qna(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_qna_tags ON qna(tags) WHERE tags IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_qna_created_at ON ERP_QNA(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_qna_tags ON ERP_QNA(tags) WHERE tags IS NOT NULL;

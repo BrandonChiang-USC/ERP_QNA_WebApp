@@ -29,7 +29,7 @@ public class DatabaseInitializer
     private static string GetPostgreSqlScript()
     {
         return """
-            CREATE TABLE IF NOT EXISTS qna (
+            CREATE TABLE IF NOT EXISTS ERP_QNA (
                 id SERIAL PRIMARY KEY,
                 question VARCHAR(2000) NOT NULL,
                 answer TEXT NOT NULL,
@@ -44,8 +44,8 @@ public class DatabaseInitializer
     private static string GetMsSqlScript()
     {
         return """
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='qna' AND xtype='U')
-            CREATE TABLE qna (
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ERP_QNA' AND xtype='U')
+            CREATE TABLE ERP_QNA (
                 id INT IDENTITY(1,1) PRIMARY KEY,
                 question NVARCHAR(2000) NOT NULL,
                 answer NVARCHAR(MAX) NOT NULL,
